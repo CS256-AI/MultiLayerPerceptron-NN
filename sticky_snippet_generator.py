@@ -112,10 +112,8 @@ class DataUtil:
             if(data_file):
                 # print(data_file_x)
                 data_folder += data_file
-        # print(len(data_folder_x))
-        # print(data_folder_x)
-        # print(len(data_folder_y))
-        # print(data_folder_y)
+        print(len(data_folder))
+        print(data_folder)
         return Data(data = data_folder)
 
 class Data:
