@@ -77,7 +77,8 @@ def train(model_file, data_folder):
         for e in range(epochs):
             processed = 0
             print("Processing epoch {} of {}".format(e+1, epochs))
-            for batch_x, batch_y in data.get_epoch_data(mini_batch_size):
+            batched_data_list = data.get_epoch_data(mini_batch_size)
+            for batch_x, batch_y in batched_data_list:
                 o,l,h1_a = session.run([model_optimizer, loss, h1_activations], feed_dict={inp: batch_x, op:batch_y})
                 processed += mini_batch_size
                 print("Processed {} training data. Current Loss : {}".format(processed, l))
@@ -143,7 +144,7 @@ def test(model_file, data_file):
         print("Model restored.")
         # Check the values of the variables
         # read number of examples using the data utility
-        test_x, test_y = data.get_epoch_data(500)[0]
+        test_x, test_y = data.get_epoch_data(5000)[0]
 
         # Comparing the model result with label
         print(op_soft_max.get_shape())
