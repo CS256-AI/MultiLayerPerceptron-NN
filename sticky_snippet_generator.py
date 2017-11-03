@@ -1,8 +1,12 @@
 import random
 import numpy as np
+import os
+import glob
+import random
 
 
-class Data:
+class DataUtil:
+    op_class = 6
     def __init__(self):
         self.items = ['A', 'B', 'C', 'D']
         self.item_len = 40
@@ -11,13 +15,13 @@ class Data:
                             'C': ['A'],
                             'D': ['B']}
 
-    def is_stick_palindrome(self, input):
+    def get_stickiness(self, input):
         length = len(input)
         if length % 2 == 1:
-            return False
-        return self.check_stickiness(input[:length/2], input[length-1:length/2-1:-1])
+            return -1
+        return self._check_stickiness(input[:length/2], input[length-1:length/2-1:-1])
 
-    def check_stickiness(self, input1, input2):
+    def _check_stickiness(self, input1, input2):
         k = 0
         if len(input1) != len(input2):
             return k
@@ -64,12 +68,88 @@ class Data:
                 if i != num_snippets - 1:
                     result = result + "\n"
                 data.append(result)
-                print(data)
-                print(len(data))
+                # print(data)
+                # print(len(data))
             f.writelines(data)
 
-data_gen = Data()
+    def create_data_folder(self, folder_name, no_files, start_file_index, num_snippets, mutation_rate, from_ends):
+        base_name = 'data'
+        ext='.txt'
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        for i in range(no_files):
+            data_gen.gen_data(num_snippets = num_snippets, mutation_rate = mutation_rate, from_ends = from_ends,
+                              output_file = os.path.join(folder_name, base_name+str(start_file_index+i)+ext))
+
+    def gen_ihot(self, data):
+        y=[]
+        for i in range(self.op_class):
+            y.append(0)
+        # print(data)
+        # print('stickiness {}'.format(self.get_stickiness(data)))
+        k = self.get_stickiness(data) + 1
+        for i in range(self.op_class):
+            if i == (k/2):
+                y[i] = 1
+        # print(y)
+        return(y)
+
+
+    def load_data(self, floder_name):
+        data_folder = []
+        for filename in glob.glob(os.path.join(floder_name, '*.txt')):
+            data_file = []
+            with open(filename) as file:
+                for line in file:
+                    data_item_x = line.strip()
+                    if (len(data_item_x) != self.item_len):
+                        print("Improper file {}".format(filename))
+                        data_file = None
+                        break
+                    data_item_int_x = [ord(char) - ord('A') for char in data_item_x]
+                    data_item_y = self.gen_ihot(data_item_x)
+                    data_file.append((data_item_int_x, data_item_y))
+            if(data_file):
+                # print(data_file_x)
+                data_folder += data_file
+        # print(len(data_folder_x))
+        # print(data_folder_x)
+        # print(len(data_folder_y))
+        # print(data_folder_y)
+        return Data(data = data_folder)
+
+class Data:
+    def __init__(self, data):
+        self.total_data = data
+
+    def get_epoch_data(self, batchsize):
+        if not self.total_data:
+            return None
+        self.batched_data = []
+        current_batch = 0
+        tot_items = len(self.total_data)
+        random.shuffle(self.total_data)
+        num_batches = tot_items/batchsize
+        while current_batch < num_batches:
+            batch_data = []
+            index_start = current_batch * batchsize
+            for i in range(batchsize):
+                batch_data.append(self.total_data[index_start + i])
+            current_batch += 1
+            self.batched_data.append(batch_data)
+        return self.batched_data
+
+
+
+data_gen = DataUtil()
 # print(data.check_stickiness('AABDC', 'CCDBA'))
 # print(data.is_stick_palindrome('AABDCDBDCC'))
 # print(data_gen.gen_stick_palindrome())
-print(data_gen.gen_data(num_snippets = 1000, mutation_rate = 0.6, from_ends = 4, output_file = 'data.txt'))
+# print(data_gen.gen_data(num_snippets = 1000, mutation_rate = 0.6, from_ends = 4, output_file = 'data.txt'))
+# data_gen.create_data_folder(folder_name = 'sample', no_files = 2, start_file_index = 2, num_snippets = 1000, mutation_rate = 0.6, from_ends = 4)
+data_dir = data_gen.load_data('sample')
+# print(len(data.data))
+# print(len(data.get_epoch_data(batchsize=100)))
+batched_data = data_dir.get_epoch_data(batchsize=100)
+print(batched_data[0])
+print(data_dir.batched_data[0])
