@@ -3,20 +3,22 @@ import sticky_snippet_generator as gen
 import sys
 
 # Configurable parameters
-mini_batch_size = 1000
+mini_batch_size = 500
 inp_feature_size = 40
 op_classes = 6
-epochs = 100
-learning_rate = 0.01
+epochs = 25
+learning_rate = 0.05
 
 # Neuron count
-h1_neuron = 80
-h2_neuron = 80
-h3_neuron = 80
+h1_neuron = 500
+h2_neuron = 500
+h3_neuron = 500
+h4_neuron = 500
 
 # Weight and Baias Initializers
 w_init_min, w_init_max = 0.1,0.5
 b_init_min, b_init_max = 0.1,0.5
+
 
 def perceptron(input, weight, bias, activation=None):
     z = tf.add(tf.matmul(input, weight), bias)
@@ -25,27 +27,33 @@ def perceptron(input, weight, bias, activation=None):
         a = activation(z)
     return a
 
+def leaky_relu(x, alpha=0.01):
+    return tf.nn.relu(x) - alpha * tf.nn.relu(-x)
+
 # input/output placeholder
 inp = tf.placeholder(tf.float32, shape=[None,inp_feature_size])
 op = tf.placeholder(tf.float32, shape=[None, op_classes])
 
 # Defining weight variables
-h1_w = tf.Variable(tf.random_uniform([inp_feature_size, h1_neuron], minval=w_init_min, maxval=w_init_max, dtype=tf.float32))
-h2_w = tf.Variable(tf.random_uniform([h1_neuron, h2_neuron], minval=w_init_min, maxval=w_init_max, dtype=tf.float32))
-h3_w = tf.Variable(tf.random_uniform([h2_neuron, h3_neuron], minval=w_init_min, maxval=w_init_max, dtype=tf.float32))
-op_w = tf.Variable(tf.random_uniform([h3_neuron, op_classes], minval=w_init_min, maxval=w_init_max, dtype=tf.float32))
+h1_w = tf.Variable(tf.random_uniform([inp_feature_size, h1_neuron], minval=0.5, maxval=0.9))
+h2_w = tf.Variable(tf.random_uniform([h1_neuron, h2_neuron], minval=0.5, maxval=0.9))
+h3_w = tf.Variable(tf.random_uniform([h2_neuron, h3_neuron], minval=0.5, maxval=0.9))
+h4_w = tf.Variable(tf.random_uniform([h3_neuron, h4_neuron], minval=0.5, maxval=0.9))
+op_w = tf.Variable(tf.random_uniform([h4_neuron, op_classes], minval=0.5, maxval=0.9))
 
 # defining bias variables
-h1_b = tf.Variable(tf.random_uniform([h1_neuron],minval=b_init_min, maxval= b_init_max, dtype = tf.float32))
-h2_b = tf.Variable(tf.random_uniform([h2_neuron],minval=b_init_min, maxval= b_init_max, dtype = tf.float32))
-h3_b = tf.Variable(tf.random_uniform([h3_neuron],minval=b_init_min, maxval= b_init_max, dtype = tf.float32))
-op_b = tf.Variable(tf.random_uniform([op_classes], minval=b_init_min, maxval= b_init_max, dtype = tf.float32))
+h1_b = tf.Variable(tf.random_normal([h1_neuron], mean=0, stddev=0.001))
+h2_b = tf.Variable(tf.random_normal([h2_neuron], mean=0, stddev=0.001))
+h3_b = tf.Variable(tf.random_normal([h3_neuron], mean=0, stddev=0.001))
+h4_b = tf.Variable(tf.random_normal([h4_neuron], mean=0, stddev=0.001))
+op_b = tf.Variable(tf.random_normal([op_classes], mean=0, stddev=0.001))
 
 h1_activations = perceptron(inp, h1_w, h1_b, tf.nn.relu)
 h2_activations = perceptron(h1_activations, h2_w, h2_b, tf.nn.relu)
 h3_activations = perceptron(h2_activations, h3_w, h3_b, tf.nn.relu)
+h4_activations = perceptron(h3_activations, h4_w, h4_b, tf.nn.relu)
 
-op_logist = perceptron(h3_activations, op_w, op_b)
+op_logist = perceptron(h4_activations, op_w, op_b)
 op_soft_max = tf.nn.softmax(op_logist)
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=op_logist, labels=op))
@@ -69,9 +77,11 @@ def train(model_file, data_folder):
             processed = 0
             print("Processing epoch {} of {}".format(e+1, epochs))
             for batch_x, batch_y in data.get_epoch_data(mini_batch_size):
-                o,l = session.run([model_optimizer, loss], feed_dict={inp: batch_x, op:batch_y})
+                o,l,h1_a = session.run([model_optimizer, loss, h1_activations], feed_dict={inp: batch_x, op:batch_y})
                 processed += mini_batch_size
                 print("Processed {} training data. Current Loss : {}".format(processed, l))
+
+            #print("l1_a:", h1_a)
         print("Training complete. Final Loss: {}".format(l))
 
         saver = tf.train.Saver()
@@ -101,6 +111,7 @@ def five_fold_train(model_file, data_file):
                     processed += batch_iters
                     print("Processed {} training data. Current Loss : {}".format(processed, l))
             print("Training complete by leaving out fold {}. Final Loss: {}".format(f+1, l))
+            #print(session.run([h1_w,h2_w,h3_w,op_w]))
             test_fold_start += fold
             test_fold_end += fold
 
@@ -124,6 +135,7 @@ def test(model_file, data_file):
         test_x, test_y = data.get_epoch_data(500)[0]
 
         # Comparing the model result with label
+        print(op_soft_max.get_shape())
         correct_prediction = tf.equal(tf.argmax(op_soft_max, 1), tf.argmax(test_y, 1))
 
         # Calculate accuracy
