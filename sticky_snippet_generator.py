@@ -121,25 +121,26 @@ class DataUtil:
 class Data:
     def __init__(self, data):
         self.total_data = data
+        self.batched_data = list()
 
     def get_epoch_data(self, batchsize):
+        self.batched_data = []
         if not self.total_data:
             return None
-        batched_data_x = []
-        batched_data_y = []
         current_batch = 0
         tot_items = len(self.total_data)
         random.shuffle(self.total_data)
         num_batches = tot_items//batchsize
         while current_batch < num_batches:
-            batch_data = []
+            batched_data_x = []
+            batched_data_y = []
             index_start = current_batch * batchsize
             for i in range(batchsize):
                 x,y = self.total_data[index_start + i]
                 batched_data_x.append(x)
                 batched_data_y.append(y)
             current_batch += 1
-            self.batched_data = (batched_data_x, batched_data_y)
+            self.batched_data.append((batched_data_x, batched_data_y))
         return self.batched_data
 
 
