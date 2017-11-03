@@ -19,7 +19,7 @@ class DataUtil:
         length = len(input)
         if length % 2 == 1:
             return -1
-        return self._check_stickiness(input[:length/2], input[length-1:length/2-1:-1])
+        return self._check_stickiness(input[:length//2], input[length-1:length//2-1:-1])
 
     def _check_stickiness(self, input1, input2):
         k = 0
@@ -35,7 +35,7 @@ class DataUtil:
 
     def gen_stick_palindrome(self):
         data = self.item_len * [None]
-        for i in range(self.item_len/2):
+        for i in range(self.item_len//2):
             item = random.choice(self.items)
             item_stick = random.choice(self.sticky_dict[item])
             # print('item : {}'.format(item))
@@ -89,7 +89,7 @@ class DataUtil:
         # print('stickiness {}'.format(self.get_stickiness(data)))
         k = self.get_stickiness(data) + 1
         for i in range(self.op_class):
-            if i == (k/2):
+            if i == (k//2):
                 y[i] = 1
         # print(y)
         return(y)
@@ -125,18 +125,21 @@ class Data:
     def get_epoch_data(self, batchsize):
         if not self.total_data:
             return None
-        self.batched_data = []
+        batched_data_x = []
+        batched_data_y = []
         current_batch = 0
         tot_items = len(self.total_data)
         random.shuffle(self.total_data)
-        num_batches = tot_items/batchsize
+        num_batches = tot_items//batchsize
         while current_batch < num_batches:
             batch_data = []
             index_start = current_batch * batchsize
             for i in range(batchsize):
-                batch_data.append(self.total_data[index_start + i])
+                x,y = self.total_data[index_start + i]
+                batched_data_x.append(x)
+                batched_data_y.append(y)
             current_batch += 1
-            self.batched_data.append(batch_data)
+            self.batched_data = (batched_data_x, batched_data_y)
         return self.batched_data
 
 
@@ -150,6 +153,4 @@ data_gen = DataUtil()
 data_dir = data_gen.load_data('sample')
 # print(len(data.data))
 # print(len(data.get_epoch_data(batchsize=100)))
-batched_data = data_dir.get_epoch_data(batchsize=100)
-print(batched_data[0])
-print(data_dir.batched_data[0])
+
