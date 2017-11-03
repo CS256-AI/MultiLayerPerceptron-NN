@@ -1,4 +1,3 @@
-import random
 import numpy as np
 import os
 import glob
@@ -7,6 +6,8 @@ import random
 
 class DataUtil:
     op_class = 6
+    max_stickiness = 8
+
     def __init__(self):
         self.items = ['A', 'B', 'C', 'D']
         self.item_len = 40
@@ -74,26 +75,28 @@ class DataUtil:
 
     def create_data_folder(self, folder_name, no_files, start_file_index, num_snippets, mutation_rate, from_ends):
         base_name = 'data'
-        ext='.txt'
+        ext = '.txt'
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
         for i in range(no_files):
-            self.gen_data(num_snippets = num_snippets, mutation_rate = mutation_rate, from_ends = from_ends,
-                              output_file = os.path.join(folder_name, base_name+str(start_file_index+i)+ext))
+            self.gen_data(num_snippets=num_snippets, mutation_rate=mutation_rate, from_ends = from_ends,
+                          output_file=os.path.join(folder_name, base_name+str(start_file_index+i)+ext))
 
     def gen_ihot(self, data):
-        y=list()
+        y = list()
         for i in range(self.op_class):
             y.append(0)
         # print(data)
         # print('stickiness {}'.format(self.get_stickiness(data)))
-        k = self.get_stickiness(data) + 1
-        for i in range(self.op_class):
-            if i == (k//2):
-                y[i] = 1
+        k = self.get_stickiness(data)
+        if k == 20:
+            y[-1] = 1
+        elif k in range(self.max_stickiness-1):
+            y[(k+1)//2] = 1
+        else:
+            y[-2] = 1
         # print(y)
-        return(y)
-
+        return y
 
     def load_data(self, floder_name):
         data_folder = list()
@@ -102,19 +105,20 @@ class DataUtil:
             with open(filename) as file:
                 for line in file:
                     data_item_x = line.strip()
-                    if (len(data_item_x) != self.item_len):
+                    if len(data_item_x) != self.item_len:
                         print("Improper file {}".format(filename))
                         data_file = None
                         break
-                    data_item_int_x = [ord(char) - ord('A') for char in data_item_x]
+                    data_item_int_x = [ord(char) - ord('A') + 1 for char in data_item_x]
                     data_item_y = self.gen_ihot(data_item_x)
                     data_file.append((data_item_int_x, data_item_y))
-            if(data_file):
+            if data_file:
                 # print(data_file_x)
                 data_folder += data_file
         print(len(data_folder))
         print(data_folder)
-        return Data(data = data_folder)
+        return Data(data=data_folder)
+
 
 class Data:
     def __init__(self, data):
@@ -134,11 +138,9 @@ class Data:
             batched_data_y = list()
             index_start = current_batch * batchsize
             for i in range(batchsize):
-                x,y = self.total_data[index_start + i]
+                x, y = self.total_data[index_start + i]
                 batched_data_x.append(x)
                 batched_data_y.append(y)
             current_batch += 1
             self.batched_data.append((batched_data_x, batched_data_y))
         return self.batched_data
-
-
