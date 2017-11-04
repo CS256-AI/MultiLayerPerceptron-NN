@@ -3,7 +3,7 @@ import sticky_snippet_generator as gen
 import sys
 
 # Configurable parameters
-mini_batch_size = 1000
+mini_batch_size = 200
 inp_feature_size = 40
 op_classes = 6
 epochs = 75
@@ -92,38 +92,42 @@ def train(model_file, data_folder):
         print("Model saved in file: ", save_path)
 
 
-def five_fold_train(model_file, data_file):
+def five_fold_train(model_file, data_folder):
+    data_gen = gen.DataUtil()
+    data = data_gen.load_data(data_folder)
+
     with tf.Session() as session:
         session.run(init)
-        num_examples = 0
-        x, y = None, None # Read complete data from utility
-        fold = num_examples/5
+        total_data = data.total_data # Read complete data from utility
+        fold = len(total_data)/5
         test_fold_start, test_fold_end = 0, fold
         for f in range(5):
             print("Training data by leaving out fold {}".format(f+1))
-            trimmed_x = x[:test_fold_start] + x[test_fold_end:]
-            trimmed_y = y[:test_fold_start] + y[test_fold_end:]
+            train_data = gen.Data(total_data[:test_fold_start] + total_data[test_fold_end:])
+            test_data = gen.Data(total_data[test_fold_start:test_fold_end])
+            test_x, test_y = test_data.get_test_data()
             # read number of examples using the data utility
             for e in range(epochs):
                 processed = 0
                 print("Processing epoch {} of {}".format(e+1, epochs))
-                batch_iters = len(trimmed_x)/mini_batch_size
-                for batch_x, batch_y in get_random_batches(trimmed_x, trimmed_y, mini_batch_size):
-                    o,l = session.run([model_optimizer, loss], feed_dict={inp: batch_x, op: batch_y})
-                    processed += batch_iters
-                    print("Processed {} training data. Current Loss : {}".format(processed, l))
-            print("Training complete by leaving out fold {}. Final Loss: {}".format(f+1, l))
+                # batch_iters = len(train_data)/mini_batch_size
+                for batch_x, batch_y in train_data.get_epoch_data(mini_batch_size):
+                    o, l, a = session.run([model_optimizer, loss, accuracy], feed_dict={inp: batch_x, op: batch_y})
+                    processed += mini_batch_size
+                    print("Processed {} training data. Current Loss : {}. Batch Accuracy : {}".format(processed, l, a))
+            print("Training complete by leaving out fold {}. Final Loss: {}".format(f + 1, l))
+            # print(session.run([accuracy], feed_dict={inp: test_x, op: test_y}))
             #print(session.run([h1_w,h2_w,h3_w,op_w]))
             test_fold_start += fold
             test_fold_end += fold
-
         saver = tf.train.Saver()
         if not model_file.endswith(".ckpt"): model_file+= ".ckpt"
         save_path = saver.save(session, model_file)
         print("Model saved in file: ", save_path)
+        test2(model_file,test_data)
 
 
-def test(model_file, data_file):
+def test(model_file, data_folder):
     saver = tf.train.Saver()
     data_gen = gen.DataUtil()
     data = data_gen.load_data(data_folder)
@@ -137,6 +141,21 @@ def test(model_file, data_file):
         # read number of examples using the data utility
         test_x, test_y = data.get_test_data()
         a, cm = session.run([accuracy, confusion_matrix], feed_dict={inp:test_x, op:test_y})
+        print("Model Accuracy : ", a)
+        print("Confusion Matrix :\n", cm)
+
+def test2(model_file, test_data):
+    saver = tf.train.Saver()
+
+    with tf.Session() as session:
+        # Restore variables from disk.
+        if not model_file.endswith(".ckpt"): model_file += ".ckpt"
+        saver.restore(session, model_file)
+        print("Model restored.")
+        # Check the values of the variables
+        # read number of examples using the data utility
+        test_x, test_y = test_data.get_test_data()
+        a, cm = session.run([accuracy, confusion_matrix], feed_dict={inp: test_x, op: test_y})
         print("Model Accuracy : ", a)
         print("Confusion Matrix :\n", cm)
 
