@@ -143,3 +143,16 @@ class Data:
             test_x.append(x)
             test_y.append(y)
         return (test_x,test_y)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 5:
+        print("Insufficient number of arguments.\nCorrect format <python sticky_snippet_generator.py num_snippets mutation_rate from_ends output_file>")
+        sys.exit()
+    else:
+        num_snippets, from_ends = int(sys.argv[1]), int(sys.argv[3])
+        mutation_rate = float(sys.argv[2])
+        op_file = sys.argv[4]
+        print("Generation data.")
+        DataUtil().gen_data(num_snippets=num_snippets, mutation_rate=mutation_rate, from_ends=from_ends, output_file=op_file)
+        print("Data Generation Complete")

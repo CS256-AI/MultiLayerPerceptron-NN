@@ -58,7 +58,7 @@ op_logist = perceptron(h4_activations, op_w, op_b)
 op_soft_max = tf.nn.softmax(op_logist)
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=op_logist, labels=op))
-model_optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
+model_optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss)
 
 init = tf.global_variables_initializer()
 
@@ -85,11 +85,6 @@ def train(model_file, data_folder):
 
             #print("l1_a:", h1_a)
         print("Training complete. Final Loss: {}".format(l))
-
-        correct_prediction = tf.equal(tf.argmax(op_soft_max, 1), tf.argmax(batch_y, 1))
-        # Calculate accuracy
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-        print(session.run(accuracy, feed_dict={inp: batch_x, op: batch_y}))
 
         saver = tf.train.Saver()
         if not model_file.endswith(".ckpt"): model_file+= ".ckpt"
@@ -122,11 +117,6 @@ def five_fold_train(model_file, data_file):
             test_fold_start += fold
             test_fold_end += fold
 
-        correct_prediction = tf.equal(tf.argmax(op_soft_max, 1), tf.argmax(batch_y, 1))
-        # Calculate accuracy
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-        print(session.run(accuracy, feed_dict={inp: batch_x, op: batch_y}))
-
         saver = tf.train.Saver()
         if not model_file.endswith(".ckpt"): model_file+= ".ckpt"
         save_path = saver.save(session, model_file)
@@ -144,7 +134,7 @@ def test(model_file, data_file):
         print("Model restored.")
         # Check the values of the variables
         # read number of examples using the data utility
-        test_x, test_y = data.get_epoch_data(5000)[0]
+        test_x, test_y = data.get_test_data()
 
         # Comparing the model result with label
         print(op_soft_max.get_shape())
