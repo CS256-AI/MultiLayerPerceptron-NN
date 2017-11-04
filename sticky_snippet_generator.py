@@ -98,13 +98,14 @@ class DataUtil:
             with open(filename) as file:
                 for line in file:
                     data_item_x = line.strip()
-                    if len(data_item_x) != self.item_len:
-                        print("Improper file {}".format(filename))
-                        data_file = None
-                        break
-                    data_item_int_x = [ord(char) - ord('A') + 1 for char in data_item_x]
-                    data_item_y = self.gen_ihot(data_item_x)
-                    data_file.append((data_item_int_x, data_item_y))
+                    if data_item_x:
+                        if len(data_item_x) != self.item_len:
+                            print("Improper file {}".format(filename))
+                            data_file = None
+                            break
+                        data_item_int_x = [ord(char) - ord('A') + 1 for char in data_item_x]
+                        data_item_y = self.gen_ihot(data_item_x)
+                        data_file.append((data_item_int_x, data_item_y))
             if data_file:
                 data_folder += data_file
         return Data(data=data_folder)
