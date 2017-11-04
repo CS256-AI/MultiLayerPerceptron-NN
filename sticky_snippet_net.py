@@ -6,7 +6,7 @@ import sys
 mini_batch_size = 1000
 inp_feature_size = 40
 op_classes = 6
-epochs = 100
+epochs = 75
 learning_rate = 0.1
 
 # Neuron count
@@ -40,13 +40,13 @@ h3_w = tf.Variable(tf.truncated_normal([h2_neuron, h3_neuron], stddev=0.1))
 op_w = tf.Variable(tf.truncated_normal([h3_neuron, op_classes], stddev=0.1))
 
 # defining bias variables
-# tf.random_normal([h1_neuron], mean=0, stddev=0.001)
+#tf.random_normal([h1_neuron], mean=0, stddev=0.001)
 # h1_b = tf.Variable(tf.truncated_normal([h1_neuron], stddev=0.001))
 # h2_b = tf.Variable(tf.truncated_normal([h2_neuron], stddev=0.001))
 # h3_b = tf.Variable(tf.truncated_normal([h3_neuron], stddev=0.001))
-h1_b = tf.constant(0.25, shape=[h1_neuron])
-h2_b = tf.constant(0.25, shape=[h2_neuron])
-h3_b = tf.constant(0.25, shape=[h3_neuron])
+h1_b = tf.constant(0.1, shape=[h1_neuron])
+h2_b = tf.constant(0.1, shape=[h2_neuron])
+h3_b = tf.constant(0.1, shape=[h3_neuron])
 op_b = tf.Variable(tf.truncated_normal([op_classes], stddev=0.001))
 
 h1_activations = perceptron(inp, h1_w, h1_b, tf.nn.relu)
@@ -81,7 +81,7 @@ def train(model_file, data_folder):
             for batch_x, batch_y in batched_data_list:
                 o,l,a = session.run([model_optimizer, loss, accuracy], feed_dict={inp: batch_x, op:batch_y})
                 processed += mini_batch_size
-                print("Processed {} training data. Current Loss : {}. Batch Accuracy : {}".format(processed, l, a))
+                print("Processed {} training data. Batch Loss : {}. Batch Accuracy : {}".format(processed, l, a))
         print("Training complete. Final Loss: {}".format(l))
 
         saver = tf.train.Saver()
