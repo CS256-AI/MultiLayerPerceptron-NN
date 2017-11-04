@@ -2,6 +2,7 @@ import numpy as np
 import os
 import glob
 import random
+import sys
 
 
 class DataUtil:
@@ -39,8 +40,6 @@ class DataUtil:
         for i in range(self.item_len//2):
             item = random.choice(self.items)
             item_stick = random.choice(self.sticky_dict[item])
-            # print('item : {}'.format(item))
-            # print('item : {}'.format(item_stick))
             data[i] = item
             data[self.item_len - 1 - i] = item_stick
         return data
@@ -50,13 +49,11 @@ class DataUtil:
         len_pal = len(stick_pal)
         for i in range(len_pal):
             selected_char = stick_pal[i]
-            # print('(i,selected_char): {}'.format((i, selected_char)))
             if i in range(from_ends) or i in range(len_pal - from_ends, len_pal):
                 prob = [(mutation_rate / (len(self.items) - 1)) if char != selected_char else 1 - mutation_rate for char
                         in self.items]
             else:
                 prob = [(1.0 / (len(self.items) - 1)) if char != selected_char else 0.0 for char in self.items]
-            # print(prob)
             result.append(np.random.choice(a=self.items, p=prob))
         return ''.join(result)
 
@@ -69,8 +66,6 @@ class DataUtil:
                 if i != num_snippets - 1:
                     result = result + "\n"
                 data.append(result)
-                # print(data)
-                # print(len(data))
             f.writelines(data)
 
     def create_data_folder(self, folder_name, no_files, start_file_index, num_snippets, mutation_rate, from_ends):
@@ -86,8 +81,6 @@ class DataUtil:
         y = list()
         for i in range(self.op_class):
             y.append(0)
-        # print(data)
-        # print('stickiness {}'.format(self.get_stickiness(data)))
         k = self.get_stickiness(data)
         if k == 20:
             y[-1] = 1
@@ -113,7 +106,6 @@ class DataUtil:
                     data_item_y = self.gen_ihot(data_item_x)
                     data_file.append((data_item_int_x, data_item_y))
             if data_file:
-                # print(data_file_x)
                 data_folder += data_file
         return Data(data=data_folder)
 
@@ -142,3 +134,12 @@ class Data:
             current_batch += 1
             self.batched_data.append((batched_data_x, batched_data_y))
         return self.batched_data
+
+    def get_test_data(self):
+        test_x = list()
+        test_y = list()
+        for i in range(len(self.total_data)):
+            x,y = self.total_data[i]
+            test_x.append(x)
+            test_y.append(y)
+        return (test_x,test_y)
