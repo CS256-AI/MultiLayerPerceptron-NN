@@ -7,7 +7,7 @@ mini_batch_size = 1000
 inp_feature_size = 40
 op_classes = 6
 epochs = 75
-learning_rate = 0.1
+learning_rate = 0.05
 
 # Neuron count
 h1_neuron = 500
@@ -62,6 +62,8 @@ model_optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 # Calculate accuracy
 correct_prediction = tf.equal(tf.argmax(op_soft_max, 1), tf.argmax(op, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+confusion_matrix = tf.confusion_matrix(tf.argmax(op, 1), tf.argmax(op_soft_max, 1), num_classes=op_classes)
+
 init = tf.global_variables_initializer()
 
 def get_random_batches():
@@ -134,7 +136,9 @@ def test(model_file, data_file):
         # Check the values of the variables
         # read number of examples using the data utility
         test_x, test_y = data.get_test_data()
-        print(session.run(accuracy, feed_dict={inp:test_x, op:test_y}))
+        a, cm = session.run([accuracy, confusion_matrix], feed_dict={inp:test_x, op:test_y})
+        print("Model Accuracy : ", a)
+        print("Confusion Matrix :\n", cm)
 
 
 if __name__ == "__main__":
