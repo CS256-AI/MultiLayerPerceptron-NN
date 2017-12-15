@@ -29,7 +29,7 @@ class DataUtil:
             return k
         for i in range(len(input1)):
             if input1[i] not in self.items:
-                print('Invalid data : Data should consist of "ABCD"')
+                print('Invalid data: Data should consist of "ABCD"')
             if input2[i] not in self.sticky_dict[input1[i]]:  # Checks whether reverse of second half is sticky
                 return k
             k += 1
